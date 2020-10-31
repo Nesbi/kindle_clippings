@@ -45,7 +45,20 @@ class Kindle:
 
     def entry_from_lines(entry_id, lines):
         # TODO use locale instead of hard coded german
-        m = re.search(r"- Ihre Markierung bei Position (.*)-(.*) \| Hinzugefügt am (.*)",lines[1])
+        m = re.search(r"- Ihre Markierung (.*) \| Hinzugefügt am (.*)",lines[1])
+
+        position = None
+        if "bei Position" in m.group(1):
+            p = re.search("bei Position (.*)-(.*)",m.group(1))
+            position = (p.group(1),p.group(2))
+        elif "auf Seite" in m.group(1):
+            p = re.search("auf Seite (.*)",m.group(1))
+            position = (p.group(1),p.group(1))
+        else:
+            raise Error("Unkown position string '{}'".format(m.group(1)))
+
+
+
         months = {
                 "Januar":1,
                 "Februar":2,
@@ -61,7 +74,7 @@ class Kindle:
                 "Dezember":12
                } 
 
-        d = re.search(r".*, (.*)\. (.*) (.*) (.*):(.*):(.*)",m.group(3))
+        d = re.search(r".*, (.*)\. (.*) (.*) (.*):(.*):(.*)",m.group(2))
 
         date = datetime.datetime(
                 int(d.group(3)),
@@ -71,7 +84,7 @@ class Kindle:
                 int(d.group(5)),
                 int(d.group(6)))
 
-        return Entry(entry_id, Kindle.clean_line(lines[0]), (m.group(1), m.group(2)), date, Kindle.clean_line("".join(lines[2:])))
+        return Entry(entry_id, Kindle.clean_line(lines[0]), position, date, Kindle.clean_line("".join(lines[2:])))
 
 
     def clean_line(line):
